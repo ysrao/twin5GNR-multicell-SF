@@ -3,12 +3,13 @@ SCOPE OF THIS LICENCE
 The MIT licence below covers the code in this repository and the companion
 notebook (twin5GNR_v7_SionnaRT_T4.ipynb): the twin pages, scripts, and the
 notebook's code cells. Documentation, the site file SF_sites.csv, result
-data, and figures are licensed under CC BY 4.0 (attribution to Rao S.
-Yenamandra). THIRD-PARTY MATERIAL IS NOT COVERED: the San Francisco city
-mesh is an evaluation sample owned by Vexcel, obtained from Vexcel under
-their terms; it is not redistributed here and must be obtained from Vexcel.
-Open-source components (Sionna RT, Mitsuba, trimesh, Draco) remain under
-their own licences.
+data, figures, and the built city scene are licensed under CC BY 4.0
+(attribution to Rao S. Yenamandra). The city scene was built by the authors
+from open data — City and County of San Francisco Building Footprints
+(DataSF, published CC0) and AWS Terrain Tiles — and may be redistributed
+under the CC BY 4.0 terms above; its CC0 source data carries no
+restrictions. Open-source components (Sionna RT, Mitsuba, trimesh) remain
+under their own licences.
 
 MIT License
 
