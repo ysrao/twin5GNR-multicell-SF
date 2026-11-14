@@ -6,13 +6,13 @@ date-released: 2026-11-14
 authors:
   - family-names: Yenamandra
     given-names: Rao S.
-    affiliation: "DigitalTwinSim.com"
+    affiliation: "DigitalTwinSim"
   - family-names: Lalwani
     given-names: Sameer
-    affiliation: "DigitalTwinSim.com"
+    affiliation: "DigitalTwinSim"
   - family-names: Nsofu
     given-names: Mubanga
-    affiliation: "Vodacom South Africa, Midrand, South Africa"
+    affiliation: "Vodacom SA, Midrand, South Africa"
   - family-names: Ram
     given-names: Asokan
     affiliation: "Wireless Research Centre, Wake Forest, NC, USA"
@@ -27,9 +27,9 @@ abstract: >-
   footprints with LiDAR heights), runnable end-to-end on a free Colab T4 with
   reader-local data, with CSV-driven tower-shift experiments and an
   interactive artefact wired to the trace output. Includes a controlled
-  comparison showing that city-scene provenance is a first-order variable
-  in ray-traced coverage, and that a scene gap can live in path strength
-  rather than path existence.
+  sensitivity analysis showing the coverage result is a property of the
+  scene rather than of solver configuration, and that a scene can pass on
+  path existence while failing on path strength.
 keywords:
   - 5G NR
   - ray tracing
