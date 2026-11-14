@@ -33,7 +33,6 @@ wired directly to the trace output.
 | City scene `city_open.ply` + `build_scene.py` | Author's Drive (view-only) |
 | Result files (open-scene full-tile, window, decomposition and sweep runs) + plots | Author's Drive (view-only) |
 | Interactive artefacts (wired re-run page + published v7/v8 pages) | This repo (GitHub Pages) |
-| Implementation code package | `multicell-code-v7-v8.zip` in this repo |
 
 ## Lab exercises (built in)
 
