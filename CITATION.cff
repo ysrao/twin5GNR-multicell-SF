@@ -1,29 +1,35 @@
 cff-version: 1.2.0
 message: "If you use this package in teaching or research, please cite it as below."
 title: "Open Reproducible Ray-Tracing Pipeline for 5G NR Multicell Digital Twins: From Public 3D City Data to an Interactive Artefact"
-version: 1.0.0
-date-released: 2026-11-13
+version: 1.1.0
+date-released: 2026-11-14
 authors:
   - family-names: Yenamandra
     given-names: Rao S.
+    affiliation: "DigitalTwinSim.com"
   - family-names: Lalwani
     given-names: Sameer
+    affiliation: "DigitalTwinSim.com"
   - family-names: Nsofu
     given-names: Mubanga
+    affiliation: "Vodacom South Africa, Midrand, South Africa"
   - family-names: Ram
     given-names: Asokan
+    affiliation: "Wireless Research Centre, Wake Forest, NC, USA"
 license: MIT
 doi: "10.5281/zenodo.24210760"
 repository-code: "https://github.com/ysrao/twin5GNR-multicell-SF"
-url: "https://ysrao.github.io/twin5GNR-multicell-SF/twin5GNR-multicell-SionnaRT-EvalMesh-Nov13.html"
+url: "https://ysrao.github.io/twin5GNR-multicell-SF/twin5GNR-multicell-SionnaRT-OpenScene-Nov14.html"
 abstract: >-
   A reproducible 5G NR multicell ray-tracing package: a three-site,
   nine-sector layout at 3.6 GHz traced with Sionna RT over a downtown
-  San Francisco city tile, runnable end-to-end on a free Colab T4 with
+  San Francisco city tile built from open municipal data (DataSF building
+  footprints with LiDAR heights), runnable end-to-end on a free Colab T4 with
   reader-local data, with CSV-driven tower-shift experiments and an
   interactive artefact wired to the trace output. Includes a controlled
-  comparison showing that city-mesh provenance is a first-order variable
-  in ray-traced coverage.
+  comparison showing that city-scene provenance is a first-order variable
+  in ray-traced coverage, and that a scene gap can live in path strength
+  rather than path existence.
 keywords:
   - 5G NR
   - ray tracing
