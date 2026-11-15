@@ -108,7 +108,7 @@ class SysCellEnv:
         sinr_t = torch.tensor(np.concatenate(sinr_rows).reshape(1, -1, 1))
         re_t = torch.full((1, len(mcs_t.flatten()), 1), 2000.0)
         out = self.phy_abs(mcs_t, sinr_eff=sinr_t, num_allocated_re=re_t)
-        success = out[1].numpy().flatten().reshape(28, len(sinr_grid))
+        success = out[1].detach().cpu().numpy().flatten().reshape(28, len(sinr_grid))
         thresholds = np.full(28, 99.0)
         for m in range(28):
             ok = np.where(success[m] > 0)[0]
@@ -197,7 +197,7 @@ class SysCellEnv:
             sinr_t = torch.tensor(sinr_db[idx].reshape(1, -1, 1), dtype=torch.float32)
             re_t = torch.tensor(alloc_re[idx].reshape(1, -1, 1), dtype=torch.float32)
             out = self.phy_abs(mcs_t, sinr_eff=sinr_t, num_allocated_re=re_t)
-            decoded = out[0].numpy().flatten().astype(float)
+            decoded = out[0].detach().cpu().numpy().flatten().astype(float)
             bits_window[idx] += decoded
             slot_rate = np.zeros(n)
             slot_rate[idx] = decoded / 1e-3  # bits per 1 ms slot -> bit/s

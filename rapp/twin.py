@@ -150,8 +150,10 @@ def calibrate_link_curve():
                           dtype=torch.float32)
     re_t = torch.full((1, len(mcs_rows), 1), float(n_re))
     out = phy(mcs_t, sinr_eff=sinr_t, num_allocated_re=re_t)
-    bits = np.array(out[0]).flatten()
-    success = np.array(out[1]).flatten() > 0
+    # PHYAbstraction outputs may live on a GPU device; bring them home
+    # before NumPy conversion (a no-op on CPU hosts).
+    bits = np.array(out[0].detach().cpu()).flatten()
+    success = np.array(out[1].detach().cpu()).flatten() > 0
     bits = bits.reshape(28, len(sinr_grid))
     success = success.reshape(28, len(sinr_grid))
     thresholds = np.full(28, np.inf)
