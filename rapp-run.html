@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run the rApp — Twin-in-the-Loop Optimisation as an rApp on a Virtual RIC</title>
+<style>
+body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:920px;margin:0 auto;padding:24px 18px 60px;color:#222;line-height:1.5}
+h1{font-size:24px;margin-bottom:4px}
+h2{font-size:19px;margin-top:32px;border-bottom:2px solid #2e9e44;padding-bottom:4px}
+.sub{color:#555;margin-top:0}
+button{font-size:15px;padding:9px 16px;margin:4px 6px 4px 0;border:1px solid #999;border-radius:8px;background:#f4f4f4;cursor:pointer}
+button.sel{background:#2e9e44;color:#fff;border-color:#2e9e44}
+button.big{background:#2e9e44;color:#fff;border-color:#2e9e44;font-size:16px;padding:11px 20px}
+table{border-collapse:collapse;margin:10px 0 16px;width:100%}
+th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;font-size:14px}
+th{background:#f0f0f0}
+textarea{width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;padding:8px;border:1px solid #bbb;border-radius:6px}
+.note{color:#555;font-size:14px}
+.box{border:1px solid #ccc;border-radius:8px;padding:12px 18px;margin:14px 0;background:#fafafa}
+.warn{border-color:#c98a00;background:#fff8e6}
+.hidden{display:none}
+canvas{border:1px solid #ccc;border-radius:6px;max-width:100%}
+.maps{display:flex;gap:18px;flex-wrap:wrap}
+.maps figure{margin:0}
+.maps figcaption{font-size:14px;text-align:center;margin-top:4px}
+</style>
+</head>
+<body>
+<h1>Run the rApp</h1>
+<p class="sub"><b>Twin-in-the-Loop Optimisation as an rApp on a Virtual RIC</b> — the working companion to the full description (v4). This page is the Virtual RIC console: prepare the run, the runner executes it with <b>Sionna RT and Sionna SYS</b> through the twin gate (§9 of the description), and the result comes back here as the recommended changes with the before &rarr; after performance.</p>
+
+<h2>Step 1 — Single tower or cluster, and the existing radio configuration</h2>
+<button id="mode-single" onclick="setMode('single')">Single tower — Tower B</button>
+<button id="mode-cluster" onclick="setMode('cluster')">Cluster — Towers A + B + C</button>
+<p class="note">Or load your own site file (same format as the site database export): <input type="file" id="sitesFile" accept=".csv,text/csv"></p>
+<textarea id="sitesCsv" rows="5"></textarea>
+<p class="note" id="sitesInfo"></p>
+<h3>Existing radio configuration (as-is)</h3>
+<div id="configTable"></div>
+<p class="note">What the optimiser may change, per §11 of the description: azimuth (search around current headings), electrical tilt (0–10&deg;), transmit power (&plusmn;2 dB), slice PRB shares, OLLA offset (&plusmn;4 dB, action threshold 1 dB). The MCS cap is reported, never silently changed.</p>
+
+<h2>Step 2 — Network counters (ingested)</h2>
+<div class="box">
+<p style="margin-top:0">In deployment the Virtual RIC collects the SMO/OSS PM export automatically each cycle and parses the standard counters itself — the operator does not type them. Here the study network's recorded counters are pre-loaded; load your own export to replace them. <span class="note" id="counterSource">(MCS histograms: the prototype's PM stand-in file for Tower B — the schema is the contract)</span></p>
+<p><input type="file" id="countersFile" accept=".csv,text/csv"> <span class="note" id="counterSummary"></span></p>
+<details><summary class="note">Counters and PM histograms in force (inspect / what-if edit)</summary>
+<textarea id="countersCsv" rows="12"></textarea>
+<textarea id="histJson" rows="5"></textarea>
+</details>
+</div>
+
+<h2>Step 3 — Select the function, hand the run to the twin</h2>
+<button class="fnbtn" id="fn-capacity" onclick="selectFn('capacity')">Capacity</button>
+<button class="fnbtn" id="fn-slice" onclick="selectFn('slice')">Slice / PRB</button>
+<button class="fnbtn" id="fn-energy" onclick="selectFn('energy')">Energy</button>
+<button class="fnbtn" id="fn-audit" onclick="selectFn('audit')">Audit</button>
+<p>
+<button class="big" onclick="downloadPackage()">1 &middot; Download the run package</button>
+<a href="https://colab.research.google.com/github/ysrao/twin5GNR-multicell-SF/blob/main/notebook/rapp_run.ipynb" target="_blank" rel="noopener"><button class="big">2 &middot; Open the runner notebook (Colab)</button></a>
+</p>
+<p class="note">In the notebook: Runtime &rarr; Run all, and upload the package when asked. The runner traces the twin with Sionna RT, scores with Sionna SYS, evaluates the existing configuration from the counter dump, runs the optimisation, and applies the twin gate before emitting anything. It writes <b>rapp_result.json</b> — bring it back here.</p>
+
+<h2>Step 4 — The result: changes and improvement</h2>
+<p>Load the result file from the run: <input type="file" id="resultFile" accept=".json,application/json"></p>
+<div id="results" class="hidden">
+<p id="resHead"></p>
+<h3>Recommended changes</h3>
+<div id="changesBox"></div>
+<div id="kpiBox"></div>
+<div class="maps" id="mapsBox">
+<figure><canvas id="mapBefore" width="320" height="320"></canvas><figcaption>Before — best-server RSRP (dBm per RE)</figcaption></figure>
+<figure><canvas id="mapAfter" width="320" height="320"></canvas><figcaption>After — best-server RSRP (dBm per RE)</figcaption></figure>
+</div>
+<div id="extraBox"></div>
+<p class="note" id="resNotes"></p>
+<button onclick="downloadResult()">Download the result / intent (JSON)</button>
+</div>
+
+<div class="box warn">
+<b>How the run works, honestly.</b> The optimisation itself — the ray-traced twin, the SYS link curve and slice environment, the guarded search, the audit's histogram fit — is the prototypes' own code, and it runs in the notebook (Sionna RT + SYS), not in this page: a static page cannot ray-trace. This page prepares the run from the sites and the counter dump and presents what the twin verified. Nothing is emitted unless it passes the twin gate; a run that finds nothing worth changing says so and keeps the as-built configuration.
+</div>
+
+<footer>
+<p class="note">Full description: <i>Twin-in-the-Loop Optimisation as an rApp on a Virtual RIC</i>, v4, Nov 2026. Study: <a href="https://doi.org/10.5281/zenodo.24210760">Zenodo DOI 10.5281/zenodo.24210760</a> &middot; <a href="rapp-artefact.html">The rApp artefact (recorded results)</a> &middot; <a href="rapp-estimator.html">The Estimator</a> &middot; <a href="index.html">Landing page</a></p>
+</footer>
+
+<script>
+var SITES_DEFAULT = "site,x_m,y_m,height_m,azimuths_deg,tilts_deg,power_offset_db,traffic_share\n" +
+"A,-250,250,30,90;210;330,7.9;6.45;10,0,0.30\n" +
+"B,250,250,30,90;210;330,10;0.97;3.92,0,0.40\n" +
+"C,0,-250,30,90;210;330,7.59;7.68;3.23,0,0.30\n";
+var COUNTERS_DEFAULT = "kpi,value\n" +
+"coverage_pct,39.5\nmedian_rsrp_dbm,-101.6\nmedian_sinr_db,7.7\nspectral_efficiency,2.08\n" +
+"median_dl_mbps,38\nmedian_ul_mbps,11\nedge_dl_mbps,6.5\nedge_ul_mbps,2.0\nfairness,0.41\n" +
+"prb_util_pct,81\nsignalling_load,34\ncell_load,0.75\nshares_embb,0.60\nshares_urllc,0.20\nshares_mmtc,0.20\n" +
+"low_traffic_hours,6\ncarriers_per_site,2\nolla_offset_db,0\nmcs_cap,24\n" +
+"audit_offset_sector1_db,-1.5\naudit_offset_sector2_db,-2.5\naudit_offset_sector3_db,-2.75\n";
+var HIST_DEFAULT = "{\"0\":[0.0,0.0,0.0,0.0,0.0,0.04395,0.0,0.0,0.0,0.0,0.0219,0.0,0.06445,0.0,0.0,0.0203,0.17165,0.0444,0.2833,0.0,0.3042,0.04585,0.0,0.0,0.0,0.0,0.0,0.0],\"1\":[0.0,0.0,0.0,0.0,0.0,0.02455,0.0,0.0,0.0,0.0,0.0,0.0,0.09245,0.0,0.0,0.0466,0.04535,0.069,0.21025,0.0,0.2549,0.2569,0.0,0.0,0.0,0.0,0.0,0.0],\"2\":[0.0,0.0,0.0,0.0,0.0,0.0381,0.0,0.0,0.0,0.0,0.0,0.0,0.0777,0.0,0.0,0.11125,0.07655,0.07875,0.11735,0.0,0.2711,0.194,0.0352,0.0,0.0,0.0,0.0,0.0]}";
+var STUDY = {
+  A: {gz: -12.67, cur: [0.38, 0.34, 0.28], proj: [0.34, 0.33, 0.33]},
+  B: {gz: -64.75, cur: [0.40, 0.35, 0.25], proj: [0.34, 0.30, 0.36]},
+  C: {gz: -38.89, cur: [0.36, 0.33, 0.31], proj: [0.32, 0.32, 0.36]}
+};
+var MODE = 'cluster', FN = 'capacity', RESULT = null;
+
+function $(id){ return document.getElementById(id); }
+function setMode(m){
+  MODE = m;
+  $('mode-single').className = (m === 'single') ? 'sel' : '';
+  $('mode-cluster').className = (m === 'cluster') ? 'sel' : '';
+  renderConfig();
+}
+function selectFn(f){
+  FN = f;
+  ['capacity','slice','energy','audit'].forEach(function(x){ $('fn-' + x).className = 'fnbtn' + (x === f ? ' sel' : ''); });
+}
+function parseSites(){
+  var lines = $('sitesCsv').value.trim().split(/\n+/).slice(1), out = [];
+  lines.forEach(function(ln){
+    var c = ln.split(',');
+    if (c.length < 8) return;
+    var key = c[0].trim().toUpperCase();
+    out.push({ key: key, name: c[0].trim(), x: +c[1], y: +c[2], h: +c[3],
+      az: c[4].split(';').map(Number), tilt: c[5].split(';').map(Number),
+      power: +c[6], traffic: +c[7] });
+  });
+  return out;
+}
+function activeSites(){
+  var s = parseSites();
+  if (MODE === 'single') {
+    var b = s.filter(function(v){ return v.key === 'B'; });
+    return b.length ? b : s.slice(0, 1);
+  }
+  return s;
+}
+function renderConfig(){
+  var s = activeSites();
+  $('sitesInfo').textContent = s.length + (MODE === 'single' ? ' site in force (single-tower mode)' : ' sites in force (cluster mode)') + '.';
+  var h = '<table><tr><th>Site</th><th>Sector</th><th>Azimuth (deg)</th><th>Tilt (deg)</th><th>Power offset (dB)</th></tr>';
+  s.forEach(function(v){
+    for (var i = 0; i < 3; i++)
+      h += '<tr>' + (i === 0 ? '<td rowspan="3">' + v.name + ' (' + v.x + ', ' + v.y + '), ' + v.h + ' m</td>' : '') +
+           '<td>' + (i + 1) + '</td><td>' + v.az[i] + '</td><td>' + v.tilt[i] + '</td><td>' + (i === 0 ? v.power : '') + '</td></tr>';
+  });
+  $('configTable').innerHTML = h + '</table>';
+}
+function parseCounters(){
+  var o = {};
+  $('countersCsv').value.trim().split(/\n+/).slice(1).forEach(function(ln){
+    var i = ln.lastIndexOf(','); if (i < 0) return;
+    o[ln.slice(0, i).trim()] = parseFloat(ln.slice(i + 1));
+  });
+  return o;
+}
+function counterSummary(){
+  var c = parseCounters();
+  $('counterSummary').textContent = 'In force: coverage ' + c.coverage_pct + '%, median RSRP ' + c.median_rsrp_dbm +
+    ' dBm, fairness ' + c.fairness + ', PRB utilisation ' + c.prb_util_pct + '%.';
+}
+function buildPackage(){
+  var c = parseCounters();
+  var sites = activeSites().map(function(v){
+    var st = STUDY[v.key] || {gz: 0, cur: [1/3, 1/3, 1/3], proj: null};
+    return { site_id: 'sf-twin-tower-' + v.key, label: 'Tower ' + v.name,
+      position_enu_m: [v.x, v.y], ground_z_m: st.gz, height_m_agl: v.h,
+      azimuths_deg: v.az, tilts_deg: v.tilt, power_offset_db: v.power,
+      traffic_shares_current: st.cur, eval_half_m: 150, eval_step_m: 20, _traffic: v.traffic, _proj: st.proj };
+  });
+  var totals = {}, proj = {};
+  sites.forEach(function(s){ totals[s.site_id] = s._traffic; proj[s.site_id] = s._proj || s.traffic_shares_current; });
+  var pkg = { mode: MODE, function: FN, sites: sites.map(function(s){ var t = Object.assign({}, s); delete t._traffic; delete t._proj; return t; }),
+    site_traffic_totals: totals,
+    policy: { traffic_shares_projected: (MODE === 'single' ? (sites[0]._proj || sites[0].traffic_shares_current) : proj),
+              min_coverage_delta_pts: 0.0, max_edge_drop_db: 1.0 },
+    counters: { median_dl: c.median_dl_mbps, median_ul: c.median_ul_mbps, edge_dl: c.edge_dl_mbps,
+      edge_ul: c.edge_ul_mbps, fairness: c.fairness, prb_util: c.prb_util_pct, signalling: c.signalling_load,
+      load: c.cell_load, low_hours: c.low_traffic_hours, carriers_per_site: c.carriers_per_site,
+      current_shares: [c.shares_embb, c.shares_urllc, c.shares_mmtc] },
+    pm: { site_id: 'sf-twin-tower-B', gnb_configured: { olla_offset_db: c.olla_offset_db || 0, mcs_cap: c.mcs_cap || 24 },
+          mcs_histograms_by_sector: JSON.parse($('histJson').value) } };
+  if (MODE === 'single') pkg.site_traffic_totals = {}; pkg.site_traffic_totals[sites[0].site_id] = 1.0;
+  return pkg;
+}
+function downloadPackage(){
+  var blob = new Blob([JSON.stringify(buildPackage(), null, 1)], {type: 'application/json'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'rapp_run_package.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+function fmt(v, d){ return (v === null || v === undefined || !isFinite(v)) ? '—' : (+v).toFixed(d === undefined ? 1 : d); }
+function renderResult(r){
+  RESULT = r;
+  $('results').className = '';
+  $('resHead').innerHTML = '<b>Run result</b> — mode: ' + r.mode + ', function: ' + r.function +
+    (r.provenance ? ' · provenance: <b>' + r.provenance + '</b>' : '') +
+    (r.slice && r.slice.provenance ? ' · provenance: <b>' + r.slice.provenance + '</b>' : '');
+  var h = '';
+  if (r.changes && r.changes.length) h = '<ul>' + r.changes.map(function(c){ return '<li>' + c + '</li>'; }).join('') + '</ul>';
+  else h = '<p>No changes — the twin gate kept the as-built configuration.</p>';
+  if (r.configs_before && r.configs_after) {
+    h += '<table><tr><th>Site</th><th></th><th>Azimuths</th><th>Tilts</th><th>Power</th></tr>';
+    Object.keys(r.configs_before).forEach(function(sid){
+      var b = r.configs_before[sid], a = r.configs_after[sid], lbl = sid.replace('sf-twin-tower-', 'Tower ');
+      h += '<tr><td rowspan="2">' + lbl + '</td><td>existing</td><td>' + b.azimuths.map(fmt0).join(' / ') + '</td><td>' + b.tilts.map(fmt0).join(' / ') + '</td><td>' + fmt(b.power_offset_db, 0) + ' dB</td></tr>';
+      h += '<tr><td><b>recommended</b></td><td>' + a.azimuths.map(fmt0).join(' / ') + '</td><td>' + a.tilts.map(fmt0).join(' / ') + '</td><td>' + fmt(a.power_offset_db, 0) + ' dB</td></tr>';
+    });
+    h += '</table>';
+  }
+  $('changesBox').innerHTML = h;
+  var k = '';
+  if (r.kpis_before && r.kpis_after) {
+    var rows = [['Coverage (>= -90 dBm per RE)', 'coverage_pct', '%', 1], ['Median RSRP', 'median_rsrp', ' dBm', 1],
+      ['Cell-edge RSRP (p5)', 'edge_rsrp_p5', ' dBm', 1], ['Median SINR', 'median_sinr', ' dB', 1],
+      ['Traffic-weighted spectral efficiency', 'capacity_weighted_se', ' bit/s/Hz', 2]];
+    k = '<h3>Performance — before &rarr; after (projected traffic, twin-scored)</h3><table><tr><th>Metric</th><th>Before</th><th>After</th><th>Change</th></tr>' +
+      rows.map(function(row){
+        var b = r.kpis_before[row[1]], a = r.kpis_after[row[1]];
+        return '<tr><td>' + row[0] + '</td><td>' + fmt(b, row[3]) + row[2] + '</td><td>' + fmt(a, row[3]) + row[2] + '</td><td>' + (isFinite(a - b) ? (a - b >= 0 ? '+' : '') + fmt(a - b, row[3]) : '—') + '</td></tr>';
+      }).join('') + '</table>';
+  }
+  $('kpiBox').innerHTML = k;
+  if (r.maps) { $('mapsBox').style.display = ''; drawMap($('mapBefore'), r.maps, 'before'); drawMap($('mapAfter'), r.maps, 'after'); }
+  else $('mapsBox').style.display = 'none';
+  var x = '';
+  if (r.slice) {
+    x += '<h3>Slice / PRB — SYS-scored profiles</h3><p>Existing reward from the ingested counters: <b>' + fmt(r.slice.counters_reward, 2) +
+      '</b>. Chosen profile: <b>' + r.slice.chosen_profile + '</b> (current: ' + r.slice.current_profile + ').</p>' +
+      '<table><tr><th>Profile</th><th>PRB shares eMBB/URLLC/mMTC</th><th>Scheduler</th><th>Reward (SYS env)</th></tr>' +
+      r.slice.profiles.map(function(pr){ return '<tr' + (pr.name === r.slice.chosen_profile ? ' style="background:#e7f6ea"' : '') + '><td>' + pr.name + '</td><td>' + pr.shares.map(function(v){ return Math.round(v * 100); }).join(' / ') + '</td><td>' + pr.scheduler + '</td><td>' + fmt(pr.reward, 2) + '</td></tr>'; }).join('') + '</table>';
+  }
+  if (r.audit) {
+    x += '<h3>Audit — ' + r.audit.site.replace('sf-twin-tower-', 'Tower ') + '</h3><table><tr><th>Sector</th><th>Twin mean MCS</th><th>PM mean MCS</th><th>Fitted effective offset</th><th>Correction</th><th>Twin-verified SE gain</th><th>Fit L1</th></tr>' +
+      r.audit.sectors.map(function(s, i){
+        return '<tr><td>' + (i + 1) + '</td><td>' + fmt(s.twin_mean_mcs, 1) + '</td><td>' + fmt(s.pm_mean_mcs, 1) + '</td><td>' + fmt(s.estimated_effective_offset_db, 2) + ' dB</td><td>' +
+          (s.recommendation ? '+' + fmt(s.recommendation.olla_offset_adjustment_db, 2) + ' dB' : 'none') + '</td><td>' + fmt(100 * s.se_gain_relative, 1) + '%</td><td>' + fmt(s.histogram_l1_distance, 2) + '</td></tr>';
+      }).join('') + '</table>';
+  }
+  if (r.energy) {
+    x += '<h3>Energy</h3><p>Energy index <b>100 &rarr; ' + fmt(r.energy.index_after, 1) + '</b> (saving ' + fmt(r.energy.saving_pct, 1) + '%).</p>';
+  }
+  $('extraBox').innerHTML = x;
+  $('resNotes').textContent = (r.notes || []).join(' ');
+}
+function fmt0(v){ return (+v).toFixed(0); }
+function drawMap(cv, maps, key){
+  var ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+  var xs = maps.x, ys = maps.y, vs = maps[key];
+  var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+  var sc = Math.min(W / (x1 - x0 + 40), H / (y1 - y0 + 40));
+  for (var i = 0; i < xs.length; i++) {
+    if (vs[i] === null || vs[i] === undefined) continue;
+    var t = Math.max(0, Math.min(1, (vs[i] + 140) / 80));
+    ctx.fillStyle = 'hsl(' + Math.round(240 - 240 * t) + ',85%,45%)';
+    ctx.fillRect((xs[i] - x0 + 20) * sc - 3, H - (ys[i] - y0 + 20) * sc - 3, 6, 6);
+  }
+  ctx.fillStyle = '#000'; ctx.font = '11px sans-serif';
+  ctx.fillText('-140 dBm', 6, H - 6); ctx.fillText('-60', W - 30, H - 6);
+}
+function downloadResult(){
+  if (!RESULT) return;
+  var blob = new Blob([JSON.stringify(RESULT, null, 1)], {type: 'application/json'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'rapp_result.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+function readFile(input, target, cb){
+  var f = input.files[0]; if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){ if (target) $(target).value = rd.result; if (cb) cb(rd.result); };
+  rd.readAsText(f);
+}
+$('sitesCsv').value = SITES_DEFAULT;
+$('countersCsv').value = COUNTERS_DEFAULT;
+$('histJson').value = HIST_DEFAULT;
+$('sitesFile').addEventListener('change', function(){ readFile(this, 'sitesCsv', renderConfig); });
+$('countersFile').addEventListener('change', function(){ readFile(this, 'countersCsv', counterSummary); });
+$('sitesCsv').addEventListener('input', renderConfig);
+$('countersCsv').addEventListener('input', counterSummary);
+$('resultFile').addEventListener('change', function(){ readFile(this, null, function(t){ try { renderResult(JSON.parse(t)); } catch (e) { alert('That file is not a valid run result: ' + e.message); } }); });
+setMode('cluster'); selectFn('capacity'); counterSummary();
+</script>
+</body>
+</html>
