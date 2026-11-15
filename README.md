@@ -15,11 +15,13 @@ All results are ray-traced simulations, not measurements.
 
 ## Quickstart for students (fully local, $0)
 
-1. Download `data/city_open.ply` and `data/SF_sites.csv`.
-2. Open the notebook in Colab with a T4 GPU runtime and put both files in the
-   Colab Files pane (or set `DATA_SOURCE = 'upload'` in step 3).
-3. Run all. A full-tile trace takes about 15 s; results are written to `./out`
-   on your own storage. Nothing is read from the authors' accounts.
+1. Open the notebook in Colab with a T4 GPU runtime.
+2. Optionally download `data/city_open.ply` and `data/SF_sites.csv` and put
+   them in the Colab Files pane (or set `DATA_SOURCE = 'upload'` in step 3).
+3. Run all. If the two files are not next to the notebook, step 3 downloads
+   them once from this repository's `data/` folder. A full-tile trace takes
+   about 15 s on a T4; results are written to `./out` on your own storage.
+   Nothing is read from the authors' accounts.
 
 ## What's in the package
 
@@ -28,7 +30,8 @@ All results are ray-traced simulations, not measurements.
 | `notebook/twin5GNR_open_scene_T4.ipynb` | Every trace in the paper: full tile, tower-B window, sensitivity runs, tower-shift sweep |
 | `data/city_open.ply` | The open city scene: 1,471 LOD1 buildings over terrain, 110,396 triangles, local ENU metres |
 | `data/SF_sites.csv` | 76 site rows: 12 macro tower-shift cases (`macro-3.6GHz`) and 64 small-cell rows (`smallcell-28GHz`) |
-| `data/results/` | Result files for the full tile and the tower-B window |
+| `data/results/` | Result files for the full tile and the tower-B window (Colab T4, as reported in the paper) |
+| `data/results/crosscheck_apple_m3/` | Every notebook run, including the seed and terrain-orientation checks, re-run on an Apple M3 GPU (Mitsuba `metal` variant) as a cross-check; within about 0.5 coverage points of the T4 figures |
 | `scripts/fetch_sources.py`, `scripts/build_scene.py` | Download the open inputs and rebuild the scene |
 | `twin5GNR-multicell-SionnaRT-OpenScene-Nov14.html` | The interactive artefact (GitHub Pages) |
 
