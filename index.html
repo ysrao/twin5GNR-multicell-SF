@@ -18,9 +18,13 @@ a.card span{color:#555;display:block;margin-top:4px}
 <h1>5G NR Multicell Twin</h1>
 <p class="sub">San Francisco, Telegraph Hill / North Beach — centre 37.801105° N, 122.404175° W, 1 km² tile, street level.</p>
 <p>A three-site, nine-sector 5G NR layout at 3.6 GHz, ray-traced with Sionna RT on a free Colab T4 over a city scene built from San Francisco’s open building footprints (DataSF, CC0).</p>
-<a class="card" href="twin5GNR-multicell-SionnaRT-OpenScene-Nov14.html"><b>5G NR Multicell Twin — Sionna RT on open city data</b><span>80.8% of street points with a ray-traced path; 24.3% reach RSRP ≥ −90 dBm, concentrated around the one site with open sightlines. Compare with the 3GPP model, and re-run the trace yourself in Colab from the page.</span></a>
+<a class="card" href="twin5GNR-multicell-SionnaRT-OpenScene-Nov14.html"><b>5G NR Multicell Twin — Sionna RT on open city data</b><span>80.8% of street points with a ray-traced path; 24.3% reach RSRP ≥ −90 dBm, concentrated around the one site with open sightlines. Re-run the trace yourself in Colab from the page.</span></a>
 <a class="card" href="https://colab.research.google.com/github/ysrao/twin5GNR-multicell-SF/blob/main/notebook/twin5GNR_open_scene_T4.ipynb"><b>Notebook (Colab)</b><span>Every trace behind the page: full tile, tower-B window, sensitivity runs and the tower-shift sweep.</span></a>
 <a class="card" href="https://github.com/ysrao/twin5GNR-multicell-SF"><b>Source, scene and data</b><span>Open scene, site file, result files and the scripts to rebuild the scene from DataSF and AWS Terrain Tiles.</span></a>
+<p><b>Earlier versions</b></p>
+<a class="card" href="twin5GNR-multicell-SionnaRT-Veg.html"><b>Sionna RT with vegetation layer (v7)</b><span>The earlier fused-mesh study: the ray trace plus a P.833 tree layer from 1,919 surveyed street trees. Median best-server RSRP −72.7 dBm; 80.5% of street points at or above −90 dBm on that scene.</span></a>
+<a class="card" href="twin5GNR-multicell-28GHz.html"><b>28 GHz small cells (v8)</b><span>Sixteen small cells on the same tile, ray-traced at 28 GHz.</span></a>
+<a class="card" href="twin5GNR-multicell-v7-3gpp.html"><b>3GPP formula twin — draggable towers (v7)</b><span>The formula-model companion page: drag the towers and the TR 38.901 map recomputes live in the browser.</span></a>
 <p>All figures are ray-traced or modelled, never measured.</p>
 </body>
 </html>
