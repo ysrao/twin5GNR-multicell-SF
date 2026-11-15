@@ -78,25 +78,35 @@ def trace_tower(ply_path, tx_pos, rx_pts, samples=500_000, seed=41,
     """One isotropic trace; returns per-receiver path gains and
     departure angles (the reusable twin state)."""
     import mitsuba as mi
-    try:
-        mi.set_variant("llvm_ad_mono_polarized")
-    except Exception:
-        pass  # a GPU variant may already be active on other hosts
+    if mi.variant() is None:
+        # Only choose a variant when none is active, and prefer the GPU
+        # variant on GPU hosts: forcing LLVM on a CUDA machine leaves
+        # Sionna RT's itu-radio-material plugin unregistered there.
+        try:
+            import torch
+            mi.set_variant("cuda_ad_mono_polarized"
+                           if torch.cuda.is_available()
+                           else "llvm_ad_mono_polarized")
+        except Exception:
+            pass
     from sionna.rt import (load_scene, Transmitter, Receiver,
                            PlanarArray, PathSolver)
     with open(scene_xml, "w") as f:
         f.write(f'''<scene version="2.1.0">
-  <bsdf type="diffuse" id="itu_concrete">
-    <rgb name="reflectance" value="0.5, 0.5, 0.5"/>
+  <bsdf type="itu-radio-material" id="itu_concrete">
+    <string name="type" value="concrete"/>
+    <float name="thickness" value="0.1"/>
+    <float name="scattering_coefficient" value="0.3"/>
   </bsdf>
-  <shape type="ply" name="city">
+  <shape type="ply" id="city">
     <string name="filename" value="{os.path.abspath(ply_path)}"/>
-    <ref id="itu_concrete"/>
+    <ref id="itu_concrete" name="bsdf"/>
   </shape>
 </scene>''')
     scene = load_scene(scene_xml)
     scene.frequency = 3.6e9
-    scene.radio_materials["itu_concrete"].scattering_coefficient = 0.3
+    if "itu_concrete" in scene.radio_materials:
+        scene.radio_materials["itu_concrete"].scattering_coefficient = 0.3
     scene.tx_array = PlanarArray(num_rows=1, num_cols=1, pattern="iso",
                                  polarization="V")
     scene.rx_array = PlanarArray(num_rows=1, num_cols=1, pattern="iso",
