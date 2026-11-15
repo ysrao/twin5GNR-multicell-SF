@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>5G NR Multicell Twin — Sionna RT on open city data</title>
+<title>5G NR Multicell Twin v16 — Sionna RT on open city data</title>
 <style>
 body{font-family:system-ui,Arial,sans-serif;margin:16px;color:#111;max-width:1100px}
 h1{font-size:22px} h2{font-size:16px}
@@ -14,7 +14,7 @@ button{padding:8px 14px;font-size:15px}
 select:disabled,input:disabled{opacity:.55}
 #runBtn{transition:background-color .15s}
 </style></head><body>
-<h1>5G NR Multicell Twin — Sionna RT on open San Francisco data (Colab T4)</h1>
+<h1>5G NR Multicell Twin v16 — Sionna RT on open San Francisco data (Colab T4)</h1>
 <p><b>Map:</b> San Francisco 1 km × 1 km, downtown tile (centre 37.801105, −122.404175), 3 towers × 3 sectors. <b>Model:</b> Sionna ray-traced (simulated, 3.6 GHz) on the open 3D city scene — the run reported in the paper. <b>All figures are modelled / ray-traced simulated, never measured.</b>  The ray-traced data are 3.6 GHz only.</p><p id="sionnaNote" style="display:none" class="note"><b>Sionna mode:</b> ray-traced RSRP on an open city scene built from City of San Francisco building footprints (DataSF, CC0) with LiDAR heights over public terrain — 1,471 buildings, 110,396 triangles (Sionna RT 2.2.0, max depth 3, LOS + specular + diffuse + diffraction, ITU concrete, scattering 0.3, per-sector auto tilt, 25×25 grid at 40 m, street level 1.5 m, EIRP 47 dBm). The Sionna data are 3.6 GHz only; the map is this trace and does not change with the menu (MIMO and Bandwidth set the UE capacity readout only). Cells with no ray to any tower are shown hatched (no coverage). Cell locations are the ray-traced tower positions, fixed.</p><p id="vegNote" style="display:none" class="note"></p>
 <div>
 <label style="display:none">Frequency <select id="freq"><option value="0.7">0.7 GHz</option><option value="3.5" selected>3.5 GHz</option><option value="7.125">7.125 GHz</option><option value="28">28 GHz</option></select></label>
