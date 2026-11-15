@@ -286,7 +286,7 @@ function draw(){
 function markStale(){var b=document.getElementById('runBtn');b.textContent='Recompute — settings changed';b.style.backgroundColor='#2e9e44';b.style.color='#fff';}
 var _drawTimer=null;
 function scheduleDraw(){markStale();if(_drawTimer)clearTimeout(_drawTimer);_drawTimer=setTimeout(draw,120);}
-function applyModelState(){var s=isSionna();document.getElementById('sionnaNote').style.display=s?'block':'none';document.getElementById('vegNote').style.display=(model()==='sionna_veg')?'block':'none';document.getElementById('fixedNote').style.display=s?'block':'none';['freq','morph','mimo'].forEach(function(id){document.getElementById(id).disabled=s;});['ax','ay','bx','by','cx','cy'].forEach(function(id){document.getElementById(id).disabled=s;});}
+function applyModelState(){var s=isSionna();document.getElementById('sionnaNote').style.display=s?'block':'none';document.getElementById('vegNote').style.display=(model()==='sionna_veg')?'block':'none';document.getElementById('fixedNote').style.display=s?'block':'none';['freq','morph'].forEach(function(id){document.getElementById(id).disabled=s;});['ax','ay','bx','by','cx','cy'].forEach(function(id){document.getElementById(id).disabled=s;});}
 ['freq','morph','mimo','eirp','bw','houe','ax','ay','bx','by','cx','cy'].forEach(id=>{var el=document.getElementById(id);el.addEventListener('input',scheduleDraw);el.addEventListener('change',scheduleDraw);});
 document.querySelectorAll('input[name="model"]').forEach(r=>r.addEventListener('change',()=>{applyModelState();scheduleDraw();}));
 applyModelState();
