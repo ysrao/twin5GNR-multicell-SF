@@ -38,6 +38,26 @@ All results are ray-traced simulations, not measurements.
 Result files hold, per receiver, the RSRP of each of the nine sectors (dBm per
 resource element) and the best-server value; `null` means no ray-traced path.
 
+The T4 result files for the sensitivity runs and the tower-shift sweep are in
+the author's Drive: [fixed tilt (4°)](https://drive.google.com/file/d/1_LxuKP4qRS3mIRDl7t1nwN1qxLor-wXi/view),
+[roof-referenced](https://drive.google.com/file/d/1Jya4qnJHoaHAr38wfBBb8XGqb-ZwtnDk/view),
+[roof-referenced, depth 5](https://drive.google.com/file/d/1P--evGIqm5tKNskO3hFhDzO10CcBgeYO/view),
+[sweep summary](https://drive.google.com/file/d/1OMFw-Wzo9UBD17g3aQSEHldOoQ4_KAs7/view), and the 12 shift cases
+[A-E](https://drive.google.com/file/d/1BixllQB4cd52SuLMDh6wEUuTO_cyPCy1/view),
+[A-W](https://drive.google.com/file/d/1rHcS5u1KBCzDcr1DyGOdnpadJajMtMGk/view),
+[A-N](https://drive.google.com/file/d/1_D7cRgnnutb7N3U0t6iWMn616sNURYSe/view),
+[A-S](https://drive.google.com/file/d/1nb37VMRQsSg_bTfQzdxO3WONOuW4nAr9/view),
+[B-E](https://drive.google.com/file/d/1pfQDaoH1hKcoojLQdgEjWfXaH7ihfJt3/view),
+[B-W](https://drive.google.com/file/d/1KJtCw-UQw4shY--ZOzM7CWiZx-ni1jpw/view),
+[B-N](https://drive.google.com/file/d/1E1X_d2RU_Rs03nUOUzTmaTcJvxetZONt/view),
+[B-S](https://drive.google.com/file/d/1J2x7FXuoPTX-IENPOrHXy2EBgdIh70AC/view),
+[C-E](https://drive.google.com/file/d/1iDuusztHL6EYm1R7RcEVQcZk-l8aXxHL/view),
+[C-W](https://drive.google.com/file/d/1C4v0ck1jm0WfFW_PPBgDSlAyS-kXdTDK/view),
+[C-N](https://drive.google.com/file/d/1FaZZUT5DSelIje8MQrOvL2XSbohJQfCw/view),
+[C-S](https://drive.google.com/file/d/1q_I-6v2X5qBNiGxieiD9rib2aJNWj4ZB/view).
+The same runs, re-executed on an Apple M3, are in
+`data/results/crosscheck_apple_m3/` above.
+
 ## Rebuilding the scene
 
 ```
