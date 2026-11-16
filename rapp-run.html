@@ -69,7 +69,7 @@ canvas{border:1px solid #ccc;border-radius:6px;max-width:100%}
 </p>
 <p class="msg hidden" id="pkgMsg"></p>
 <textarea id="pkgText" rows="12" readonly style="width:100%;box-sizing:border-box;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px"></textarea>
-<p class="note">This box is the run package for the mode, function, sites and counters above — it rebuilds itself whenever you change anything. In the notebook: paste it into the <b>package cell</b> (the second cell — replace the text between the triple quotes), then Runtime &rarr; Run all. The runner traces the twin with Sionna RT, scores with Sionna SYS, evaluates the existing configuration from the counter dump, runs the optimisation, and applies the twin gate. <b>The result prints in the notebook's last cell</b> — the changes, the before &rarr; after numbers and the maps. No files, no downloads.</p>
+<p class="note">This box is the run package for the mode, function, sites and counters above — it rebuilds itself whenever you change anything. In the notebook: click the <b>second cell</b>, select all of it (Cmd/Ctrl+A) and paste over it — the copied text is the whole cell — then Runtime &rarr; Run all. The runner traces the twin with Sionna RT, scores with Sionna SYS, evaluates the existing configuration from the counter dump, runs the optimisation, and applies the twin gate. <b>The result prints in the notebook's last cell</b> — the changes, the before &rarr; after numbers and the maps. No files, no downloads.</p>
 
 <div class="box warn">
 <b>How the run works, honestly.</b> The optimisation itself — the ray-traced twin, the SYS link curve and slice environment, the guarded search, the audit's histogram fit — is the prototypes' own code, and it runs in the notebook (Sionna RT + SYS), not in this page: a static page cannot ray-trace. This page prepares the run package from the sites and the counter dump; the notebook runs it and its last cell presents what the twin verified. Nothing is emitted unless it passes the twin gate; a run that finds nothing worth changing says so and keeps the as-built configuration.
@@ -241,14 +241,14 @@ function buildPackage(){
 // Saving: inside a Claude artifact use the downloads capability; on a normal web host fall back to a link download.
 function refreshPkgText(){
   var t = $('pkgText'); if (!t) return;
-  try { t.value = JSON.stringify(buildPackage(), null, 1); }
+  try { t.value = "PACKAGE_JSON = r'''" + String.fromCharCode(10) + JSON.stringify(buildPackage(), null, 1) + String.fromCharCode(10) + "'''"; }
   catch(e){ t.value = '(the package cannot be built yet: ' + e.message + ')'; }
 }
 function copyPackage(){
   refreshPkgText();
   var t = $('pkgText');
   t.focus(); t.select();
-  function done(){ showMsg('pkgMsg', 'Package copied — paste it into the notebook\'s package cell, then Run all. The result prints in the last cell.', 'ok'); }
+  function done(){ showMsg('pkgMsg', 'Copied — in the notebook click the second cell, select all (Cmd/Ctrl+A) and paste over it, then Run all. The result prints in the last cell.', 'ok'); }
   function fail(){ showMsg('pkgMsg', 'Copy failed — click in the box, select all (Ctrl/Cmd+A) and copy manually.', 'err'); }
   if (navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(t.value).then(done, function(){ try { document.execCommand('copy'); done(); } catch(e){ fail(); } });
