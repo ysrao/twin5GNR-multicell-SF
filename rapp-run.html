@@ -64,32 +64,15 @@ canvas{border:1px solid #ccc;border-radius:6px;max-width:100%}
 <button class="fnbtn" id="fn-audit" onclick="selectFn('audit')">Audit</button>
 <button class="fnbtn" id="fn-all" onclick="selectFn('all')">All functions</button>
 <p>
-<button class="big" onclick="downloadPackage()">1 &middot; Download the run package</button>
+<button class="big" onclick="copyPackage()">1 &middot; Copy the package</button>
 <a class="btn big" href="https://colab.research.google.com/github/ysrao/twin5GNR-multicell-SF/blob/main/notebook/rapp_run.ipynb" target="_blank" rel="noopener">2 &middot; Open the runner notebook (Colab)</a>
 </p>
 <p class="msg hidden" id="pkgMsg"></p>
-<p class="note">In the notebook: Runtime &rarr; Run all, and upload the package when asked. The runner traces the twin with Sionna RT, scores with Sionna SYS, evaluates the existing configuration from the counter dump, runs the optimisation, and applies the twin gate before emitting anything. It writes a result file named for the run — <b>rapp_result_&lt;mode&gt;_&lt;function&gt;.json</b> — bring it back here.</p>
-
-<h2>Step 4 — The result: changes and improvement</h2>
-<p>Load the result file from the run: <input type="file" id="resultFile" accept=".json,application/json"></p>
-<p class="msg err hidden" id="resMsg"></p>
-<div id="results" class="hidden">
-<p id="resHead"></p>
-<h3>Recommended changes</h3>
-<div id="changesBox"></div>
-<div id="kpiBox"></div>
-<div class="maps" id="mapsBox">
-<figure><canvas id="mapBefore" width="320" height="320"></canvas><figcaption>Before — best-server RSRP (dBm per RE)</figcaption></figure>
-<figure><canvas id="mapAfter" width="320" height="320"></canvas><figcaption>After — best-server RSRP (dBm per RE)</figcaption></figure>
-</div>
-<div id="extraBox"></div>
-<p class="note" id="resNotes"></p>
-<button onclick="downloadResult()">Download the result / intent (JSON)</button>
-<p class="msg hidden" id="resDlMsg"></p>
-</div>
+<textarea id="pkgText" rows="12" readonly style="width:100%;box-sizing:border-box;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px"></textarea>
+<p class="note">This box is the run package for the mode, function, sites and counters above — it rebuilds itself whenever you change anything. In the notebook: paste it into the <b>package cell</b> (the second cell — replace the text between the triple quotes), then Runtime &rarr; Run all. The runner traces the twin with Sionna RT, scores with Sionna SYS, evaluates the existing configuration from the counter dump, runs the optimisation, and applies the twin gate. <b>The result prints in the notebook's last cell</b> — the changes, the before &rarr; after numbers and the maps. No files, no downloads.</p>
 
 <div class="box warn">
-<b>How the run works, honestly.</b> The optimisation itself — the ray-traced twin, the SYS link curve and slice environment, the guarded search, the audit's histogram fit — is the prototypes' own code, and it runs in the notebook (Sionna RT + SYS), not in this page: a static page cannot ray-trace. This page prepares the run from the sites and the counter dump and presents what the twin verified. Nothing is emitted unless it passes the twin gate; a run that finds nothing worth changing says so and keeps the as-built configuration.
+<b>How the run works, honestly.</b> The optimisation itself — the ray-traced twin, the SYS link curve and slice environment, the guarded search, the audit's histogram fit — is the prototypes' own code, and it runs in the notebook (Sionna RT + SYS), not in this page: a static page cannot ray-trace. This page prepares the run package from the sites and the counter dump; the notebook runs it and its last cell presents what the twin verified. Nothing is emitted unless it passes the twin gate; a run that finds nothing worth changing says so and keeps the as-built configuration.
 </div>
 
 <footer>
@@ -138,7 +121,7 @@ function setMode(m){
   $('mode-cluster').className = (m === 'cluster') ? 'sel' : '';
   renderConfig();
 }
-function selectFn(f){
+function selectFn_(f){
   FN = f;
   ['capacity','slice','energy','audit','all'].forEach(function(x){ $('fn-' + x).className = 'fnbtn' + (x === f ? ' sel' : ''); });
   renderConfig();
@@ -168,7 +151,7 @@ function siteIssues(s){
   var hasPm = s.some(function(v){ return v.key === PM_SITE_KEY; });
   return { unknown: unknown, hasPm: hasPm };
 }
-function renderConfig(){
+function renderConfig_(){
   var s = activeSites();
   $('sitesInfo').textContent = s.length + (MODE === 'single' ? ' site in force (single-tower mode)' : ' sites in force (cluster mode)') + '.';
   var iss = siteIssues(s), w = [];
@@ -202,7 +185,7 @@ function parseCounters(){
 function missingCounters(c){
   return REQUIRED_COUNTERS.filter(function(k){ return num(c[k]) === null; });
 }
-function counterSummary(){
+function counterSummary_(){
   var c = parseCounters();
   function show(v, u){ return num(v) === null ? '—' : v + (u || ''); }
   $('counterSummary').textContent = 'In force: coverage ' + show(c.coverage_pct, '%') + ', median RSRP ' + show(c.median_rsrp_dbm, ' dBm') +
@@ -256,157 +239,29 @@ function buildPackage(){
 }
 
 // Saving: inside a Claude artifact use the downloads capability; on a normal web host fall back to a link download.
-var DL = null;
-if (window.claude && typeof window.claude.use === 'function') {
-  window.claude.use('downloads').then(function(d){ DL = d; }, function(){ DL = null; });
+function refreshPkgText(){
+  var t = $('pkgText'); if (!t) return;
+  try { t.value = JSON.stringify(buildPackage(), null, 1); }
+  catch(e){ t.value = '(the package cannot be built yet: ' + e.message + ')'; }
 }
-function saveJson(filename, obj, msgId){
-  var text = JSON.stringify(obj, null, 1);
-  if (DL) {
-    return DL.save({ filename: filename, data: text }).then(function(){
-      showMsg(msgId, 'Saved ' + filename + '.', 'ok');
-    }, function(e){
-      var code = e && e.code;
-      if (code === 'declined') showMsg(msgId, 'Download cancelled.', 'wrn');
-      else if (code === 'rate_limited') showMsg(msgId, 'A save prompt is already open — finish it, then try again.', 'wrn');
-      else showMsg(msgId, 'Could not save here (' + (code || 'unavailable') + ').', 'err');
-    });
-  }
-  try {
-    var blob = new Blob([text], {type: 'application/json'});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = filename; a.style.display = 'none';
-    document.body.appendChild(a); a.click();
-    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1500);
-    showMsg(msgId, 'Downloading ' + filename + '…', 'ok');
-  } catch (e) {
-    showMsg(msgId, 'This browser could not start the download: ' + e.message, 'err');
+function copyPackage(){
+  refreshPkgText();
+  var t = $('pkgText');
+  t.focus(); t.select();
+  function done(){ showMsg('pkgMsg', 'Package copied — paste it into the notebook\'s package cell, then Run all. The result prints in the last cell.', 'ok'); }
+  function fail(){ showMsg('pkgMsg', 'Copy failed — click in the box, select all (Ctrl/Cmd+A) and copy manually.', 'err'); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t.value).then(done, function(){ try { document.execCommand('copy'); done(); } catch(e){ fail(); } });
+  } else {
+    try { document.execCommand('copy'); done(); } catch(e){ fail(); }
   }
 }
-function downloadPackage(){
-  var pkg;
-  try { pkg = buildPackage(); }
-  catch (e) { showMsg('pkgMsg', e.message, 'err'); return; }
-  saveJson('rapp_package_' + pkg.mode + '_' + pkg.function + '.json', pkg, 'pkgMsg');
-}
-function downloadResult(){
-  if (!RESULT) return;
-  saveJson('rapp_result_' + (RESULT.mode || 'run') + '_' + (RESULT['function'] || 'result') + '.json', RESULT, 'resDlMsg');
-}
-
 function fmt(v, d){ return (v === null || v === undefined || v === '' || !isFinite(v)) ? '—' : (+v).toFixed(d === undefined ? 1 : d); }
 function fmt0(v){ return fmt(v, 0); }
 function signed(v, d){ var s = fmt(v, d); return (s !== '—' && +v > 0) ? '+' + s : s; }
 function arr(v){ return Array.isArray(v) ? v : []; }
 function siteLabel(sid){ return esc(String(sid).replace('sf-twin-tower-', 'Tower ')); }
 
-function renderResult(r){
-  if (!r || typeof r !== 'object') throw new Error('the file does not contain a JSON object');
-  RESULT = r;
-  $('results').className = '';
-  showMsg('resDlMsg', '');
-  var prov = [];
-  if (r.provenance) prov.push(r.provenance);
-  if (r.slice && r.slice.provenance && r.slice.provenance !== r.provenance) prov.push(r.slice.provenance);
-  $('resHead').innerHTML = '<b>Run result</b> — mode: ' + esc(r.mode || '—') + ', function: ' + esc(r['function'] || '—') +
-    (prov.length ? ' · provenance: <b>' + prov.map(esc).join(' / ') + '</b>' : '');
-
-  var h = '';
-  var changes = arr(r.changes);
-  if (changes.length) h = '<ul>' + changes.map(function(c){ return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>';
-  else h = '<p>No changes — the twin gate kept the as-built configuration.</p>';
-  if (r.configs_before && r.configs_after && typeof r.configs_before === 'object') {
-    h += '<table><tr><th>Site</th><th></th><th>Azimuths</th><th>Tilts</th><th>Power</th></tr>';
-    Object.keys(r.configs_before).forEach(function(sid){
-      var b = r.configs_before[sid] || {}, a = r.configs_after[sid];
-      var lbl = siteLabel(sid);
-      function row(name, cfg){
-        return '<td>' + name + '</td><td>' + arr(cfg.azimuths).map(fmt0).join(' / ') + '</td><td>' + arr(cfg.tilts).map(fmt0).join(' / ') +
-          '</td><td>' + fmt(cfg.power_offset_db, 0) + ' dB</td>';
-      }
-      if (a) {
-        h += '<tr><td rowspan="2">' + lbl + '</td>' + row('existing', b) + '</tr>';
-        h += '<tr>' + row('<b>recommended</b>', a) + '</tr>';
-      } else {
-        h += '<tr><td>' + lbl + '</td>' + row('existing (no recommendation in file)', b) + '</tr>';
-      }
-    });
-    h += '</table>';
-  }
-  $('changesBox').innerHTML = h;
-
-  var k = '';
-  if (r.kpis_before && r.kpis_after) {
-    var rows = [['Coverage (&ge; -90 dBm per RE)', 'coverage_pct', '%', 1], ['Median RSRP', 'median_rsrp', ' dBm', 1],
-      ['Cell-edge RSRP (p5)', 'edge_rsrp_p5', ' dBm', 1], ['Median SINR', 'median_sinr', ' dB', 1],
-      ['Traffic-weighted spectral efficiency', 'capacity_weighted_se', ' bit/s/Hz', 2]];
-    k = '<h3>Performance — before &rarr; after (projected traffic, twin-scored)</h3><table><tr><th>Metric</th><th>Before</th><th>After</th><th>Change</th></tr>' +
-      rows.map(function(row){
-        var b = r.kpis_before[row[1]], a = r.kpis_after[row[1]];
-        var fb = fmt(b, row[3]), fa = fmt(a, row[3]);
-        var delta = (fb !== '—' && fa !== '—') ? (a - b >= 0 ? '+' : '') + fmt(a - b, row[3]) : '—';
-        return '<tr><td>' + row[0] + '</td><td>' + fb + (fb !== '—' ? row[2] : '') + '</td><td>' + fa + (fa !== '—' ? row[2] : '') + '</td><td>' + delta + '</td></tr>';
-      }).join('') + '</table>';
-  }
-  $('kpiBox').innerHTML = k;
-
-  var m = r.maps;
-  if (m && Array.isArray(m.x) && Array.isArray(m.y) && Array.isArray(m.before) && Array.isArray(m.after) && m.x.length) {
-    $('mapsBox').style.display = '';
-    drawMap($('mapBefore'), m, 'before'); drawMap($('mapAfter'), m, 'after');
-  } else $('mapsBox').style.display = 'none';
-
-  var x = '';
-  if (r.slice) {
-    var profiles = arr(r.slice.profiles);
-    x += '<h3>Slice / PRB — SYS-scored profiles</h3><p>Existing reward from the ingested counters: <b>' + fmt(r.slice.counters_reward, 2) +
-      '</b>. Chosen profile: <b>' + esc(r.slice.chosen_profile || '—') + '</b> (current: ' + esc(r.slice.current_profile || '—') + ').</p>';
-    if (profiles.length)
-      x += '<table><tr><th>Profile</th><th>PRB shares eMBB/URLLC/mMTC</th><th>Scheduler</th><th>Reward (SYS env)</th></tr>' +
-        profiles.map(function(pr){
-          return '<tr' + (pr.name === r.slice.chosen_profile ? ' style="background:#e7f6ea"' : '') + '><td>' + esc(pr.name) + '</td><td>' +
-            arr(pr.shares).map(function(v){ return fmt(100 * v, 0); }).join(' / ') + '</td><td>' + esc(pr.scheduler) + '</td><td>' + fmt(pr.reward, 2) + '</td></tr>';
-        }).join('') + '</table>';
-  }
-  if (r.audit) {
-    x += '<h3>Audit — ' + siteLabel(r.audit.site || '—') + '</h3><table><tr><th>Sector</th><th>Twin mean MCS</th><th>PM mean MCS</th><th>Fitted effective offset</th><th>Correction</th><th>Twin-verified SE gain</th><th>Fit L1</th></tr>' +
-      arr(r.audit.sectors).map(function(s, i){
-        s = s || {};
-        var corr = (s.recommendation && num(s.recommendation.olla_offset_adjustment_db) !== null)
-          ? signed(s.recommendation.olla_offset_adjustment_db, 2) + ' dB' : 'none';
-        return '<tr><td>' + (i + 1) + '</td><td>' + fmt(s.twin_mean_mcs, 1) + '</td><td>' + fmt(s.pm_mean_mcs, 1) + '</td><td>' +
-          fmt(s.estimated_effective_offset_db, 2) + ' dB</td><td>' + corr + '</td><td>' +
-          (num(s.se_gain_relative) !== null ? fmt(100 * s.se_gain_relative, 1) + '%' : '—') + '</td><td>' + fmt(s.histogram_l1_distance, 2) + '</td></tr>';
-      }).join('') + '</table>';
-  }
-  if (r.energy) {
-    x += '<h3>Energy</h3><p>Energy index <b>100 &rarr; ' + fmt(r.energy.index_after, 1) + '</b> (saving ' + fmt(r.energy.saving_pct, 1) + '%).</p>';
-  }
-  $('extraBox').innerHTML = x;
-  $('resNotes').textContent = arr(r.notes).join(' ');
-}
-function drawMap(cv, maps, key){
-  var ctx = cv.getContext('2d'), W = cv.width, H = cv.height, PAD = 20, LEG = 18;
-  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
-  var xs = maps.x, ys = maps.y, vs = maps[key];
-  var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
-  var sc = Math.min((W - 2 * PAD) / Math.max(x1 - x0, 1), (H - 2 * PAD - LEG) / Math.max(y1 - y0, 1));
-  for (var i = 0; i < xs.length; i++) {
-    var v = vs[i];
-    if (v === null || v === undefined || !isFinite(v)) continue;
-    var t = Math.max(0, Math.min(1, (v + 140) / 80));
-    ctx.fillStyle = 'hsl(' + Math.round(240 - 240 * t) + ',85%,45%)';
-    ctx.fillRect(PAD + (xs[i] - x0) * sc - 3, H - LEG - PAD - (ys[i] - y0) * sc - 3, 6, 6);
-  }
-  // colour-scale legend strip below the map
-  for (var j = 0; j < W - 80; j++) {
-    ctx.fillStyle = 'hsl(' + Math.round(240 - 240 * j / (W - 81)) + ',85%,45%)';
-    ctx.fillRect(40 + j, H - 12, 1, 8);
-  }
-  ctx.fillStyle = '#000'; ctx.font = '10px sans-serif';
-  ctx.fillText('-140', 6, H - 4); ctx.fillText('-60 dBm', W - 38, H - 4);
-}
 function readFile(input, target, cb){
   var f = input.files[0]; if (!f) return;
   var rd = new FileReader();
@@ -426,13 +281,10 @@ $('countersFile').addEventListener('change', function(){
 $('sitesCsv').addEventListener('input', renderConfig);
 $('allowDefaults').addEventListener('change', function(){ showMsg('pkgMsg', ''); });
 $('countersCsv').addEventListener('input', counterSummary);
-$('resultFile').addEventListener('change', function(){
-  readFile(this, null, function(t){
-    try { renderResult(JSON.parse(t)); showMsg('resMsg', ''); }
-    catch (e) { $('results').className = 'hidden'; RESULT = null; showMsg('resMsg', 'That file is not a valid run result: ' + e.message, 'err'); }
-  });
-});
-setMode('cluster'); selectFn('capacity'); counterSummary();
+function renderConfig(){ renderConfig_(); refreshPkgText(); }
+function counterSummary(){ counterSummary_(); refreshPkgText(); }
+function selectFn(f){ selectFn_(f); refreshPkgText(); }
+refreshPkgText();
 </script>
 </body>
 </html>
