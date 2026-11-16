@@ -62,6 +62,7 @@ canvas{border:1px solid #ccc;border-radius:6px;max-width:100%}
 <button class="fnbtn" id="fn-slice" onclick="selectFn('slice')">Slice / PRB</button>
 <button class="fnbtn" id="fn-energy" onclick="selectFn('energy')">Energy</button>
 <button class="fnbtn" id="fn-audit" onclick="selectFn('audit')">Audit</button>
+<button class="fnbtn" id="fn-all" onclick="selectFn('all')">All functions</button>
 <p>
 <button class="big" onclick="downloadPackage()">1 &middot; Download the run package</button>
 <a class="btn big" href="https://colab.research.google.com/github/ysrao/twin5GNR-multicell-SF/blob/main/notebook/rapp_run.ipynb" target="_blank" rel="noopener">2 &middot; Open the runner notebook (Colab)</a>
@@ -139,7 +140,7 @@ function setMode(m){
 }
 function selectFn(f){
   FN = f;
-  ['capacity','slice','energy','audit'].forEach(function(x){ $('fn-' + x).className = 'fnbtn' + (x === f ? ' sel' : ''); });
+  ['capacity','slice','energy','audit','all'].forEach(function(x){ $('fn-' + x).className = 'fnbtn' + (x === f ? ' sel' : ''); });
   renderConfig();
 }
 function parseSites(){
@@ -219,7 +220,7 @@ function buildPackage(){
   var iss = siteIssues(active);
   if (iss.unknown.length && !$('allowDefaults').checked)
     throw new Error('Unknown site(s) ' + iss.unknown.join(', ') + ' — tick “Proceed anyway” in Step 1 to use defaults, or use the study sites.');
-  if (FN === 'audit' && !iss.hasPm)
+  if ((FN === 'audit' || FN === 'all') && !iss.hasPm)
     throw new Error('The audit needs Tower ' + PM_SITE_KEY + ' (its MCS histograms are the ones loaded) among the active sites.');
   var hist;
   try { hist = JSON.parse($('histJson').value); }
