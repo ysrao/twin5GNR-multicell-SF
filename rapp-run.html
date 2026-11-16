@@ -68,7 +68,7 @@ canvas{border:1px solid #ccc;border-radius:6px;max-width:100%}
 <a class="btn big" href="https://colab.research.google.com/github/ysrao/twin5GNR-multicell-SF/blob/main/notebook/rapp_run.ipynb" target="_blank" rel="noopener">2 &middot; Open the runner notebook (Colab)</a>
 </p>
 <p class="msg hidden" id="pkgMsg"></p>
-<p class="note">In the notebook: Runtime &rarr; Run all, and upload the package when asked. The runner traces the twin with Sionna RT, scores with Sionna SYS, evaluates the existing configuration from the counter dump, runs the optimisation, and applies the twin gate before emitting anything. It writes <b>rapp_result.json</b> — bring it back here.</p>
+<p class="note">In the notebook: Runtime &rarr; Run all, and upload the package when asked. The runner traces the twin with Sionna RT, scores with Sionna SYS, evaluates the existing configuration from the counter dump, runs the optimisation, and applies the twin gate before emitting anything. It writes a result file named for the run — <b>rapp_result_&lt;mode&gt;_&lt;function&gt;.json</b> — bring it back here.</p>
 
 <h2>Step 4 — The result: changes and improvement</h2>
 <p>Load the result file from the run: <input type="file" id="resultFile" accept=".json,application/json"></p>
@@ -288,11 +288,11 @@ function downloadPackage(){
   var pkg;
   try { pkg = buildPackage(); }
   catch (e) { showMsg('pkgMsg', e.message, 'err'); return; }
-  saveJson('rapp_run_package.json', pkg, 'pkgMsg');
+  saveJson('rapp_package_' + pkg.mode + '_' + pkg.function + '.json', pkg, 'pkgMsg');
 }
 function downloadResult(){
   if (!RESULT) return;
-  saveJson('rapp_result.json', RESULT, 'resDlMsg');
+  saveJson('rapp_result_' + (RESULT.mode || 'run') + '_' + (RESULT['function'] || 'result') + '.json', RESULT, 'resDlMsg');
 }
 
 function fmt(v, d){ return (v === null || v === undefined || v === '' || !isFinite(v)) ? '—' : (+v).toFixed(d === undefined ? 1 : d); }
